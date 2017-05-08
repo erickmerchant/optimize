@@ -1,0 +1,30 @@
+{
+  "name": "@erickmerchant/optimize",
+  "version": "1.0.0",
+  "description": "optimize css using uncss",
+  "main": "main.js",
+  "bin": {
+    "optimize": "./main.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/erickmerchant/optimize.git"
+  },
+  "author": "Erick Merchant <erickmerchant@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/erickmerchant/optimize/issues"
+  },
+  "homepage": "https://github.com/erickmerchant/optimize#readme",
+  "dependencies": {
+    "chalk": "^1.1.3",
+    "cheerio": "^0.22.0",
+    "glob": "^7.1.1",
+    "sergeant": "^15.4.0",
+    "thenify": "^3.2.1",
+    "uncss": "^0.14.1"
+  }
+}

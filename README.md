@@ -1,2 +1,3 @@
-# optimize
-optimize css and images
+# @erickmerchant/optimize
+
+optimize css using uncss
