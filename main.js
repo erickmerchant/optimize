@@ -28,7 +28,7 @@ command('optimize', function ({option, parameter}) {
     const htmlroot = source
     const csspath = source
 
-    return glob(htmlroot + '**/*.html').then(function (files) {
+    return glob(path.join(htmlroot, '**/*.html')).then(function (files) {
       if (args.inline) {
         return files.map(function (file) {
           return uncss([file], {htmlroot, csspath}).then(function (css) {
