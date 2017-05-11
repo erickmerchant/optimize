@@ -31,43 +31,51 @@ command('optimize', function ({option, parameter}) {
     return glob(path.join(htmlroot, '**/*.html')).then(function (files) {
       if (args.inline) {
         return files.map(function (file) {
-          return uncss([file], {htmlroot, csspath}).then(function (css) {
-            return fsReadFile(file, 'utf-8').then(function (html) {
-              return fsWriteFile(file, restyle(html, '<style type="text/css">' + css + '</style>')).then(function () {
-                console.log(chalk.green('\u2714 ') + 'saved optimized ' + path.join(args.source, path.relative(args.source, file)))
-              })
-            })
+          return unstyle([file]).then(function (css) {
+            return restyle(file, '<style type="text/css">' + css + '</style>')
           })
         })
       } else {
-        uncss(files, {htmlroot, csspath}).then(function (css) {
+        unstyle(files).then(function (css) {
           return fsWriteFile(path.join(source, 'app.css'), css).then(function () {
             console.log(chalk.green('\u2714 ') + 'saved optimized ' + path.join(args.source, 'app.css'))
 
             return files.map(function (file) {
-              return fsReadFile(file, 'utf-8').then(function (html) {
-                return fsWriteFile(file, restyle(html, '<link href="/app.css" rel="stylesheet" type="text/css" />'))
-              })
+              return restyle(file, '<link href="/app.css" rel="stylesheet" type="text/css" />')
             })
           })
         })
       }
     })
+
+    function unstyle (files) {
+      return uncss(files, {htmlroot, csspath}).then(function (css) {
+        css = css.filter((v) => v != null).join('\n')
+
+        css = css.replace(source, '')
+
+        return css
+      })
+    }
+
+    function restyle (file, newStyle) {
+      return fsReadFile(file, 'utf-8').then(function (html) {
+        let $ = cheerio.load(html)
+
+        $('style').replaceWith('')
+
+        $('link[rel=stylesheet]').replaceWith('')
+
+        if ($('head').length) {
+          $('head').append(newStyle)
+        } else {
+          $('body').before(newStyle)
+        }
+
+        return fsWriteFile(file, $.html()).then(function () {
+          console.log(chalk.green('\u2714 ') + 'saved optimized ' + path.join(args.source, path.relative(args.source, file)))
+        })
+      })
+    }
   }
 })(process.argv.slice(2))
-
-function restyle (html, newStyle) {
-  let $ = cheerio.load(html)
-
-  $('style').replaceWith('')
-
-  $('link[rel=stylesheet]').replaceWith('')
-
-  if ($('head').length) {
-    $('head').append(newStyle)
-  } else {
-    $('body').before(newStyle)
-  }
-
-  return $.html()
-}
