@@ -7,7 +7,7 @@
     "optimize": "./main.js"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "standard && tape 'test.js' | faucet"
   },
   "repository": {
     "type": "git",
@@ -26,5 +26,12 @@
     "sergeant": "^15.4.0",
     "thenify": "^3.2.1",
     "uncss": "^0.14.1"
+  },
+  "devDependencies": {
+    "faucet": "0.0.1",
+    "mockery": "^2.0.0",
+    "nyc": "^10.0.0",
+    "standard": "^10.0.0",
+    "tape": "^4.6.0"
   }
 }
