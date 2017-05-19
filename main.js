@@ -17,6 +17,11 @@ command('optimize', function ({option, parameter}) {
     required: true
   })
 
+  option('css', {
+    description: 'name of outputted css file without extension',
+    default: 'bundle'
+  })
+
   option('inline', {
     description: 'inline the css',
     type: Boolean,
@@ -37,11 +42,11 @@ command('optimize', function ({option, parameter}) {
         })
       } else {
         unstyle(files).then(function (css) {
-          return fsWriteFile(path.join(source, 'app.css'), css).then(function () {
-            console.log(chalk.green('\u2714 ') + 'saved optimized ' + path.join(args.source, 'app.css'))
+          return fsWriteFile(path.join(source, args.css + '.css'), css).then(function () {
+            console.log(chalk.green('\u2714 ') + 'saved optimized ' + path.join(args.source, args.css + '.css'))
 
             return files.map(function (file) {
-              return restyle(file, '<link href="/app.css" rel="stylesheet" type="text/css" />')
+              return restyle(file, '<link href="/' + args.css + '.css" rel="stylesheet" type="text/css" />')
             })
           })
         })

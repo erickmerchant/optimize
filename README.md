@@ -1,3 +1,7 @@
 # @erickmerchant/optimize
 
-optimize css using uncss
+optimize various things for a website
+
+- [x] css
+- [ ] svg
+- [ ] images
