@@ -6,8 +6,8 @@ const path = require('path')
 const chalk = require('chalk')
 const cheerio = require('cheerio')
 const thenify = require('thenify')
-const fsReadFile = thenify(require('fs').readFile)
-const fsWriteFile = thenify(require('fs').writeFile)
+const readFile = thenify(require('fs').readFile)
+const writeFile = thenify(require('fs').writeFile)
 const uncss = thenify(require('uncss'))
 const glob = thenify(require('glob'))
 
@@ -42,7 +42,7 @@ command('optimize', function ({option, parameter}) {
         })
       } else {
         unstyle(files).then(function (css) {
-          return fsWriteFile(path.join(source, args.css + '.css'), css).then(function () {
+          return writeFile(path.join(source, args.css + '.css'), css).then(function () {
             console.log(chalk.green('\u2714 ') + 'saved optimized ' + path.join(args.source, args.css + '.css'))
 
             return files.map(function (file) {
@@ -64,7 +64,7 @@ command('optimize', function ({option, parameter}) {
     }
 
     function restyle (file, newStyle) {
-      return fsReadFile(file, 'utf-8').then(function (html) {
+      return readFile(file, 'utf-8').then(function (html) {
         let $ = cheerio.load(html)
 
         $('style').replaceWith('')
@@ -77,7 +77,7 @@ command('optimize', function ({option, parameter}) {
           $('body').before(newStyle)
         }
 
-        return fsWriteFile(file, $.html()).then(function () {
+        return writeFile(file, $.html()).then(function () {
           console.log(chalk.green('\u2714 ') + 'saved optimized ' + path.join(args.source, path.relative(args.source, file)))
         })
       })
