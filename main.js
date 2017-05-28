@@ -3,12 +3,13 @@
 
 const command = require('sergeant')
 const path = require('path')
-const chalk = require('chalk')
+// const chalk = require('chalk')
 const cheerio = require('cheerio')
 const thenify = require('thenify')
 const readFile = thenify(require('fs').readFile)
 const writeFile = thenify(require('fs').writeFile)
-const uncss = thenify(require('uncss'))
+const postcss = require('postcss')
+const uncss = require('uncss').postcssPlugin
 const glob = thenify(require('glob'))
 
 command('optimize', function ({option, parameter}) {
@@ -17,9 +18,9 @@ command('optimize', function ({option, parameter}) {
     required: true
   })
 
-  option('css', {
-    description: 'name of outputted css file without extension',
-    default: 'bundle'
+  parameter('css', {
+    description: 'the file where your css is',
+    required: true
   })
 
   option('inline', {
@@ -28,58 +29,96 @@ command('optimize', function ({option, parameter}) {
     default: false
   })
 
+  option('each', {
+    description: 'go file by file',
+    type: Boolean,
+    default: false
+  })
+
   return function (args) {
-    const source = path.join(process.cwd(), args.source)
-    const htmlroot = source
-    const csspath = source
+    const source = path.join(process.cwd(), args.source, '**/*.html')
 
-    return glob(path.join(htmlroot, '**/*.html')).then(function (files) {
-      if (args.inline) {
-        return files.map(function (file) {
-          return unstyle([file]).then(function (css) {
-            return restyle(file, '<style type="text/css">' + css + '</style>')
-          })
-        })
-      } else {
-        unstyle(files).then(function (css) {
-          return writeFile(path.join(source, args.css + '.css'), css).then(function () {
-            console.log(chalk.green('\u2714 ') + 'saved optimized ' + path.join(args.source, args.css + '.css'))
+    return glob(source)
+    .then(function (files) {
+      if (args.each) {
+        return Promise.all(files.map(function (file) {
+          return unstyle([file], `/${path.relative(args.source, file)}.css.map`)
+          .then(function (output) {
+            let map = JSON.parse(output.map)
 
-            return files.map(function (file) {
-              return restyle(file, '<link href="/' + args.css + '.css" rel="stylesheet" type="text/css" />')
-            })
+            map.sources = map.sources.map((source) => path.relative(process.cwd(), source))
+
+            return Promise.all([
+              args.inline ? restyle(file, output) : Promise.resolve(true),
+              writeFile(path.join(process.cwd(), `${path.relative(args.source, file)}.css`), String(output.css)),
+              writeFile(path.join(process.cwd(), `${path.relative(args.source, file)}.css.map`), JSON.stringify(map))
+            ])
           })
-        })
+        }))
       }
+
+      return unstyle(files, `/${path.relative(args.source, args.css)}.map`)
+      .then(function (output) {
+        let map = JSON.parse(output.map)
+
+        map.sources = map.sources.map((source) => path.relative(process.cwd(), source))
+
+        return Promise.all([
+          Promise.all(files.map(function (file) {
+            return args.inline ? restyle(file, output) : Promise.resolve(true)
+          })),
+          writeFile(path.join(process.cwd(), `${args.css}`), String(output.css)),
+          writeFile(path.join(process.cwd(), `${args.css}.map`), JSON.stringify(map))
+        ])
+      })
     })
 
-    function unstyle (files) {
-      return uncss(files, {htmlroot, csspath}).then(function (css) {
-        css = css.filter((v) => v != null).join('\n')
+    function unstyle (files, annotation) {
+      return Promise.all([
+        readFile(args.css, 'utf-8'),
+        readFile(args.css + '.map', 'utf-8')
+      ])
+      .then(function ([css, map]) {
+        const plugins = [
+          uncss({
+            html: files
+          })
+        ]
 
-        css = css.replace(source, '')
+        const prev = JSON.parse(map)
 
-        return css
+        prev.sources = prev.sources.map((source) => path.join(process.cwd(), source))
+
+        return postcss(plugins).process(css, {
+          from: '/' + path.relative(args.source, args.css),
+          to: '/' + path.relative(args.source, args.css),
+          map: {
+            prev,
+            inline: false,
+            annotation
+          }
+        })
       })
     }
 
-    function restyle (file, newStyle) {
-      return readFile(file, 'utf-8').then(function (html) {
+    function restyle (file, output) {
+      const css = String(output.css)
+
+      const href = path.relative(args.source, args.css)
+
+      return readFile(file, 'utf-8')
+      .then(function (html) {
         let $ = cheerio.load(html)
 
-        $('style').replaceWith('')
+        let link = $('link[href$="' + href + '"]')
 
-        $('link[rel=stylesheet]').replaceWith('')
-
-        if ($('head').length) {
-          $('head').append(newStyle)
-        } else {
-          $('body').before(newStyle)
+        if (link.length !== 1) {
+          throw new Error('no link found')
         }
 
-        return writeFile(file, $.html()).then(function () {
-          console.log(chalk.green('\u2714 ') + 'saved optimized ' + path.join(args.source, path.relative(args.source, file)))
-        })
+        link.replaceWith('<style type="text/css">' + css + '</style>')
+
+        return writeFile(file, $.html())
       })
     }
   }
