@@ -26,7 +26,7 @@
     "postcss": "^6.0.4",
     "sergeant": "^15.4.3",
     "thenify": "^3.2.1",
-    "uncss": "^0.14.1"
+    "uncss": "^0.15.0"
   },
   "devDependencies": {
     "faucet": "0.0.1",
