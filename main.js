@@ -81,7 +81,8 @@ command('optimize', function ({option, parameter}) {
       .then(function ([css, map]) {
         const plugins = [
           uncss({
-            html: files
+            html: files,
+            htmlroot: args.source
           })
         ]
 
