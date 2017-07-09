@@ -82,7 +82,7 @@ command('optimize', function ({option, parameter}) {
         const plugins = [
           uncss({
             html: files,
-            htmlroot: args.source
+            htmlroot: path.join(process.cwd(), args.source)
           })
         ]
 
