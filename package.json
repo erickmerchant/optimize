@@ -24,7 +24,7 @@
     "cheerio": "^0.22.0",
     "glob": "^7.1.1",
     "postcss": "^6.0.4",
-    "sergeant": "^15.4.3",
+    "sergeant": "^15.4.4",
     "thenify": "^3.2.1",
     "uncss": "^0.15.0"
   },
