@@ -44,7 +44,8 @@ command('optimize', ({option, parameter}) => {
         .then((content) => {
           return {
             path: file,
-            dom: new JSDOM(content)
+            dom: new JSDOM(content),
+            content
           }
         })
       }))
@@ -93,7 +94,7 @@ command('optimize', ({option, parameter}) => {
           postcss.plugin('optimize', function (opts) {
             return function (root, result) {
               root.walkRules(rule => {
-                if (['to', 'from'].includes(rule.selector)) return
+                if (rule.parent.type === 'atrule' && rule.parent.name.endsWith('keyframes')) return
 
                 const selector = rule.selectors
                   .map((selector) => selector.trim())
@@ -131,21 +132,23 @@ command('optimize', ({option, parameter}) => {
     }
 
     function inline (file, output) {
+      const dom = new JSDOM(file.content)
+
       const css = String(output.css)
 
       const href = path.relative(args.source, args.css)
 
-      let element = file.dom.window.document.querySelector('link[href$="' + href + '"]')
+      let element = dom.window.document.querySelector('link[href$="' + href + '"]')
 
-      if (element.length !== 1) {
+      if (element == null) {
         throw new Error('no link found')
       }
 
       const fragment = new JSDOM('<style type="text/css">' + css + '</style>')
 
-      element.parentNode.replaceChild(fragment.window.document.body, element)
+      element.parentNode.replaceChild(fragment.window.document.head.childNodes[0], element)
 
-      return writeFile(file.path, file.dom.serialize())
+      return writeFile(file.path, dom.serialize())
     }
   }
 })(process.argv.slice(2))
