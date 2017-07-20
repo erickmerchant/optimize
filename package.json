@@ -20,18 +20,17 @@
   },
   "homepage": "https://github.com/erickmerchant/optimize#readme",
   "dependencies": {
-    "chalk": "^2.0.1",
-    "cheerio": "^0.22.0",
     "glob": "^7.1.1",
-    "postcss": "^6.0.4",
-    "sergeant": "^15.4.4",
-    "thenify": "^3.2.1",
-    "uncss": "^0.15.0"
+    "jsdom": "^11.1.0",
+    "postcss": "^6.0.7",
+    "sergeant": "^15.4.7",
+    "strip-pseudos": "^1.0.0",
+    "thenify": "^3.2.1"
   },
   "devDependencies": {
     "faucet": "0.0.1",
     "mockery": "^2.1.0",
-    "nyc": "^11.0.3",
+    "nyc": "^11.1.0",
     "standard": "^10.0.0",
     "tape": "^4.7.0"
   }
