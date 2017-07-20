@@ -100,7 +100,11 @@ command('optimize', ({option, parameter}) => {
                   .map((selector) => selector.trim())
                   .filter((selector) => {
                     return files.reduce((isUsed, file) => {
-                      return file.dom.window.document.querySelector(stripPseudos(selector)) != null ? true : isUsed
+                      const stripped = stripPseudos(selector)
+
+                      if (!stripped) return true
+
+                      return file.dom.window.document.querySelector(stripped) != null ? true : isUsed
                     }, false)
                   })
                   .join(', ')
