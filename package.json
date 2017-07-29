@@ -23,7 +23,7 @@
     "glob": "^7.1.1",
     "jsdom": "^11.1.0",
     "postcss": "^6.0.7",
-    "sergeant": "^15.4.7",
+    "sergeant": "^15.4.8",
     "strip-pseudos": "^1.0.0",
     "thenify": "^3.2.1"
   },
