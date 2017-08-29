@@ -22,7 +22,7 @@
   "dependencies": {
     "glob": "^7.1.1",
     "jsdom": "^11.2.0",
-    "postcss": "^6.0.9",
+    "postcss": "^6.0.10",
     "sergeant": "^15.4.9",
     "strip-pseudos": "^1.0.0",
     "thenify": "^3.2.1"
