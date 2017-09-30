@@ -21,7 +21,7 @@
   "homepage": "https://github.com/erickmerchant/optimize#readme",
   "dependencies": {
     "glob": "^7.1.1",
-    "jsdom": "^11.2.0",
+    "jsdom": "^11.3.0",
     "postcss": "^6.0.12",
     "sergeant": "^15.4.11",
     "strip-pseudos": "^1.0.0",
