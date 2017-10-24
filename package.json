@@ -23,14 +23,14 @@
     "glob": "^7.1.1",
     "jsdom": "^11.3.0",
     "postcss": "^6.0.13",
-    "sergeant": "^15.4.12",
+    "sergeant": "^15.4.15",
     "strip-pseudos": "^1.0.0",
     "thenify": "^3.2.1"
   },
   "devDependencies": {
     "faucet": "0.0.1",
     "mockery": "^2.1.0",
-    "nyc": "^11.2.1",
+    "nyc": "^11.3.0",
     "standard": "^10.0.3",
     "tape": "^4.8.0"
   }
