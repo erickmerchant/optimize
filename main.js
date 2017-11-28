@@ -28,12 +28,6 @@ command('optimize', ({option, parameter}) => {
     default: false
   })
 
-  option('each', {
-    description: 'go file by file',
-    type: Boolean,
-    default: false
-  })
-
   return (args) => {
     const source = path.join(process.cwd(), args.source, '**/*.html')
 
@@ -51,23 +45,6 @@ command('optimize', ({option, parameter}) => {
       }))
     })
     .then((files) => {
-      if (args.each) {
-        return Promise.all(files.map((file) => {
-          return unstyle([file], `/${path.relative(args.source, file.path)}.css.map`)
-          .then((output) => {
-            let map = JSON.parse(output.map)
-
-            map.sources = map.sources.map((source) => path.relative(process.cwd(), source))
-
-            return Promise.all([
-              args.inline ? inline(file, output) : Promise.resolve(true),
-              writeFile(path.join(process.cwd(), `${path.relative(args.source, file.path)}.css`), String(output.css)),
-              writeFile(path.join(process.cwd(), `${path.relative(args.source, file.path)}.css.map`), JSON.stringify(map))
-            ])
-          })
-        }))
-      }
-
       return unstyle(files, `/${path.relative(args.source, args.css)}.map`)
       .then((output) => {
         let map = JSON.parse(output.map)
