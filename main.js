@@ -23,7 +23,7 @@ command('optimize', ({option, parameter}) => {
   })
 
   option('inline', {
-    description: 'inline the css',
+    description: 'inline the css and source map',
     type: Boolean,
     default: false
   })
@@ -45,23 +45,26 @@ command('optimize', ({option, parameter}) => {
       }))
     })
     .then((files) => {
-      return unstyle(files, `/${path.relative(args.source, args.css)}.map`)
+      return unstyle(files)
       .then((output) => {
-        let map = JSON.parse(output.map)
+        let result
 
-        map.sources = map.sources.map((source) => path.relative(process.cwd(), source))
+        if (args.inline) {
+          result = Promise.all(files.map((file) => {
+            return inline(file, output)
+          }))
+        } else {
+          result = Promise.all([
+            writeFile(path.join(process.cwd(), `${args.css}`), String(output.css)),
+            writeFile(path.join(process.cwd(), `${args.css}.map`), output.map)
+          ])
+        }
 
-        return Promise.all([
-          Promise.all(files.map((file) => {
-            return args.inline ? inline(file, output) : Promise.resolve(true)
-          })),
-          writeFile(path.join(process.cwd(), `${args.css}`), String(output.css)),
-          writeFile(path.join(process.cwd(), `${args.css}.map`), JSON.stringify(map))
-        ])
+        return result
       })
     })
 
-    function unstyle (files, annotation) {
+    function unstyle (files) {
       return Promise.all([
         readFile(args.css, 'utf-8'),
         readFile(args.css + '.map', 'utf-8')
@@ -98,15 +101,15 @@ command('optimize', ({option, parameter}) => {
 
         const prev = JSON.parse(map)
 
-        prev.sources = prev.sources.map((source) => path.join(process.cwd(), source))
+        prev.sources = prev.sources.map((source) => path.relative(process.cwd(), source))
 
         return postcss(plugins).process(css, {
           from: '/' + path.relative(args.source, args.css),
           to: '/' + path.relative(args.source, args.css),
           map: {
             prev,
-            inline: false,
-            annotation
+            inline: args.inline,
+            annotation: `/${path.relative(args.source, args.css)}.map`
           }
         })
       })
