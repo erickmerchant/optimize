@@ -2,12 +2,12 @@
   "name": "@erickmerchant/optimize",
   "version": "6.1.0",
   "description": "optimize css using uncss",
-  "main": "main.js",
+  "main": "index.js",
   "bin": {
-    "optimize": "./main.js"
+    "optimize": "./cli.js"
   },
   "scripts": {
-    "test": "standard && tape 'test.js' | faucet"
+    "test": "standard && tape 'test.js'"
   },
   "repository": {
     "type": "git",
@@ -28,9 +28,6 @@
     "thenify": "^3.2.1"
   },
   "devDependencies": {
-    "faucet": "0.0.1",
-    "mockery": "^2.1.0",
-    "nyc": "^11.3.0",
     "standard": "^10.0.3",
     "tape": "^4.8.0"
   }
