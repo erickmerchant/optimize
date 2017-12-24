@@ -2,12 +2,7 @@
 
 const command = require('sergeant')
 const optimize = require('./index')
+const thenify = require('thenify')
+const writeFile = thenify(require('fs').writeFile)
 
-command('optimize', ({option, parameter}) => {
-  parameter('source', {
-    description: 'the directory that contains html',
-    required: true
-  })
-
-  return optimize
-})(process.argv.slice(2))
+command('optimize', optimize({writeFile}))(process.argv.slice(2))

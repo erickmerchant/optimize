@@ -23,11 +23,12 @@
     "glob": "^7.1.1",
     "jsdom": "^11.5.1",
     "postcss": "^6.0.14",
-    "sergeant": "^17.1.1",
+    "sergeant": "^17.2.0",
     "strip-pseudos": "^1.0.0",
     "thenify": "^3.2.1"
   },
   "devDependencies": {
+    "execa": "^0.8.0",
     "standard": "^10.0.3",
     "tape": "^4.8.0"
   }
