@@ -28,7 +28,7 @@
     "thenify": "^3.2.1"
   },
   "devDependencies": {
-    "execa": "^0.8.0",
+    "execa": "^0.9.0",
     "standard": "^10.0.3",
     "tape": "^4.8.0"
   }
