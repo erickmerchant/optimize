@@ -49,12 +49,12 @@ test('index.js - optimize', async function (t) {
       return Promise.resolve(true)
     }
   })(noopDefiners)({ source: './fixtures/' })
-  .then(function () {
-    t.deepEqual(output, [
-      [path.join(process.cwd(), 'fixtures/bundle.css'), fixtureCode.trim()],
-      [path.join(process.cwd(), 'fixtures/bundle.css.map'), fixtureMap.trim()]
-    ])
-  })
+    .then(function () {
+      t.deepEqual(output, [
+        [path.join(process.cwd(), 'fixtures/bundle.css'), fixtureCode.trim()],
+        [path.join(process.cwd(), 'fixtures/bundle.css.map'), fixtureMap.trim()]
+      ])
+    })
 })
 
 test('cli.js', async function (t) {
