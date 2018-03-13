@@ -13,7 +13,7 @@ const noopDefiners = {
 }
 
 test('index.js - options and parameters', function (t) {
-  t.plan(2)
+  t.plan(3)
 
   const parameters = {}
   const options = {}
@@ -30,12 +30,15 @@ test('index.js - options and parameters', function (t) {
   t.ok(parameters.source)
 
   t.deepEqual(parameters.source.required, true)
+
+  t.deepEqual(parameters.source.multiple, true)
 })
 
 test('index.js - optimize', async function (t) {
   t.plan(1)
 
-  const [fixtureCode, fixtureMap] = await Promise.all([
+  const [fixtureHTML, fixtureCode, fixtureMap] = await Promise.all([
+    readFile('./fixtures/expected.html', 'utf-8'),
     readFile('./fixtures/expected.css', 'utf-8'),
     readFile('./fixtures/expected.css.map', 'utf-8')
   ])
@@ -48,9 +51,10 @@ test('index.js - optimize', async function (t) {
 
       return Promise.resolve(true)
     }
-  })(noopDefiners)({ source: './fixtures/' })
+  })(noopDefiners)({ source: ['./fixtures/index.html'] })
     .then(function () {
       t.deepEqual(output, [
+        ['./fixtures/index.html', fixtureHTML.trim()],
         [path.join(process.cwd(), 'fixtures/bundle.css'), fixtureCode.trim()],
         [path.join(process.cwd(), 'fixtures/bundle.css.map'), fixtureMap.trim()]
       ])

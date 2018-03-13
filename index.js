@@ -1,10 +1,11 @@
 const assert = require('assert')
 const path = require('path')
+const commonDir = require('common-dir')
 const postcss = require('postcss')
 const JSDOM = require('jsdom').JSDOM
 const stripPseudos = require('strip-pseudos')
+const minify = require('html-minifier').minify
 const thenify = require('thenify')
-const glob = thenify(require('glob'))
 const readFile = thenify(require('fs').readFile)
 
 module.exports = function (deps) {
@@ -13,27 +14,39 @@ module.exports = function (deps) {
   return function ({option, parameter}) {
     parameter('source', {
       description: 'the directory that contains html',
-      required: true
+      required: true,
+      multiple: true
     })
 
     return function (args) {
-      const source = path.join(process.cwd(), args.source, '**/*.html')
+      let sourceDir = commonDir(args.source)
+      return Promise.all(args.source.map(function (file) {
+        return readFile(file, 'utf-8')
+          .then(function (content) {
+            content = minify(content, {
+              collapseWhitespace: true,
+              removeComments: true,
+              collapseBooleanAttributes: true,
+              removeAttributeQuotes: true,
+              removeRedundantAttributes: true,
+              removeEmptyAttributes: true,
+              removeOptionalTags: true
+            })
 
-      return glob(source)
-        .then(function (files) {
-          return Promise.all(files.map(function (file) {
-            return readFile(file, 'utf-8')
-              .then(function (content) {
-                const dom = new JSDOM(content)
-                const hrefs = [...dom.window.document.querySelectorAll('link[rel=stylesheet]')].map((el) => path.join(args.source, el.getAttribute('href')))
+            return deps.writeFile(file, content).then(function () {
+              return content
+            })
+          })
+          .then(function (content) {
+            const dom = new JSDOM(content)
+            const hrefs = [...dom.window.document.querySelectorAll('link[rel=stylesheet]')].map((el) => path.join(sourceDir, el.getAttribute('href')))
 
-                return Promise.resolve({
-                  dom,
-                  hrefs
-                })
-              })
-          }))
-        })
+            return Promise.resolve({
+              dom,
+              hrefs
+            })
+          })
+      }))
         .then(function (files) {
           return Promise.all(files.reduce((hrefs, file) => hrefs.concat(file.hrefs.filter((href, index) => file.hrefs.indexOf(href) === index)), []).map(function (href) {
             return Promise.all([
@@ -75,11 +88,11 @@ module.exports = function (deps) {
                 prev.sources = prev.sources.map((source) => path.relative(process.cwd(), source))
 
                 return Promise.resolve(postcss(plugins).process(css, {
-                  from: '/' + path.relative(args.source, href),
-                  to: '/' + path.relative(args.source, href),
+                  from: '/' + path.relative(sourceDir, href),
+                  to: '/' + path.relative(sourceDir, href),
                   map: {
                     prev,
-                    annotation: `/${path.relative(args.source, href)}.map`
+                    annotation: `/${path.relative(sourceDir, href)}.map`
                   }
                 }))
               })
