@@ -20,7 +20,8 @@
   },
   "homepage": "https://github.com/erickmerchant/optimize#readme",
   "dependencies": {
-    "common-dir": "^1.0.1",
+    "glob": "^7.1.2",
+    "glob-parent": "^3.1.0",
     "html-minifier": "^3.5.10",
     "jsdom": "^11.6.2",
     "postcss": "^6.0.19",

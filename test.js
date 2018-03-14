@@ -54,7 +54,7 @@ test('index.js - optimize', async function (t) {
   })(noopDefiners)({ source: ['./fixtures/index.html'] })
     .then(function () {
       t.deepEqual(output, [
-        ['./fixtures/index.html', fixtureHTML.trim()],
+        [path.join(process.cwd(), './fixtures/index.html'), fixtureHTML.trim()],
         [path.join(process.cwd(), 'fixtures/bundle.css'), fixtureCode.trim()],
         [path.join(process.cwd(), 'fixtures/bundle.css.map'), fixtureMap.trim()]
       ])
