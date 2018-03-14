@@ -23,7 +23,7 @@ module.exports = function (deps) {
       return Promise.all(args.source.map(function (file) {
         return readFile(file, 'utf-8')
           .then(function (content) {
-            content = minify(content, {
+            const minified = minify(content, {
               collapseWhitespace: true,
               removeComments: true,
               collapseBooleanAttributes: true,
@@ -33,7 +33,7 @@ module.exports = function (deps) {
               removeOptionalTags: true
             })
 
-            return deps.writeFile(file, content).then(function () {
+            return deps.writeFile(file, minified).then(function () {
               return content
             })
           })
