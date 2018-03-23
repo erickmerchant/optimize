@@ -20,15 +20,14 @@ module.exports = function (deps) {
     })
 
     return function (args) {
-      return Promise.all(args.source.map(function (source) {
-        source = path.join(process.cwd(), source)
+      const sources = args.source.map((source) => path.join(process.cwd(), source))
+      const directory = commonDir(sources)
 
+      return Promise.all(sources.map(function (source) {
         return glob(source, {nodir: true})
       }))
         .then(function (files) {
           files = files.reduce((acc, cur) => acc.concat(cur), [])
-
-          const directory = commonDir(files)
 
           return Promise.all(files.map(function (file) {
             return readFile(file, 'utf-8')
