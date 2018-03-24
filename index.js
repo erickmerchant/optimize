@@ -7,7 +7,6 @@ const minify = require('html-minifier').minify
 const thenify = require('thenify')
 const readFile = thenify(require('fs').readFile)
 const glob = thenify(require('glob'))
-const commonDir = require('common-dir')
 
 module.exports = function (deps) {
   assert.equal(typeof deps.writeFile, 'function')
@@ -15,20 +14,12 @@ module.exports = function (deps) {
   return function ({option, parameter}) {
     parameter('source', {
       description: 'the directory that contains html',
-      required: true,
-      multiple: true
+      required: true
     })
 
     return function (args) {
-      const sources = args.source.map((source) => path.join(process.cwd(), source))
-      const directory = commonDir(sources)
-
-      return Promise.all(sources.map(function (source) {
-        return glob(source, {nodir: true})
-      }))
+      return glob(path.join(args.source, '**/*.html'), {nodir: true})
         .then(function (files) {
-          files = files.reduce((acc, cur) => acc.concat(cur), [])
-
           return Promise.all(files.map(function (file) {
             return readFile(file, 'utf-8')
               .then(function (content) {
@@ -48,7 +39,7 @@ module.exports = function (deps) {
               })
               .then(function (content) {
                 const dom = new JSDOM(content)
-                const hrefs = [...dom.window.document.querySelectorAll('link[rel=stylesheet]')].map((el) => path.join(directory, el.getAttribute('href')))
+                const hrefs = [...dom.window.document.querySelectorAll('link[rel=stylesheet]')].map((el) => path.join(args.source, el.getAttribute('href')))
 
                 return Promise.resolve({
                   dom,
@@ -97,11 +88,11 @@ module.exports = function (deps) {
                     prev.sources = prev.sources.map((source) => path.relative(process.cwd(), source))
 
                     return Promise.resolve(postcss(plugins).process(css, {
-                      from: '/' + path.relative(directory, href),
-                      to: '/' + path.relative(directory, href),
+                      from: '/' + path.relative(args.source, href),
+                      to: '/' + path.relative(args.source, href),
                       map: {
                         prev,
-                        annotation: `/${path.relative(directory, href)}.map`
+                        annotation: `/${path.relative(args.source, href)}.map`
                       }
                     }))
                   })

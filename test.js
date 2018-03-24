@@ -1,6 +1,5 @@
 const test = require('tape')
 const execa = require('execa')
-const path = require('path')
 const thenify = require('thenify')
 const readFile = thenify(require('fs').readFile)
 
@@ -13,7 +12,7 @@ const noopDefiners = {
 }
 
 test('index.js - options and parameters', function (t) {
-  t.plan(3)
+  t.plan(2)
 
   const parameters = {}
   const options = {}
@@ -30,17 +29,15 @@ test('index.js - options and parameters', function (t) {
   t.ok(parameters.source)
 
   t.deepEqual(parameters.source.required, true)
-
-  t.deepEqual(parameters.source.multiple, true)
 })
 
 test('index.js - optimize', async function (t) {
   t.plan(1)
 
   const [fixtureHTML, fixtureCode, fixtureMap] = await Promise.all([
-    readFile('./fixtures/expected.html', 'utf-8'),
-    readFile('./fixtures/expected.css', 'utf-8'),
-    readFile('./fixtures/expected.css.map', 'utf-8')
+    readFile('./fixtures/expected/index.html', 'utf-8'),
+    readFile('./fixtures/expected/bundle.css', 'utf-8'),
+    readFile('./fixtures/expected/bundle.css.map', 'utf-8')
   ])
 
   const output = []
@@ -51,12 +48,12 @@ test('index.js - optimize', async function (t) {
 
       return Promise.resolve(true)
     }
-  })(noopDefiners)({ source: ['./fixtures/index.html'] })
+  })(noopDefiners)({ source: './fixtures/build/' })
     .then(function () {
       t.deepEqual(output, [
-        [path.join(process.cwd(), './fixtures/index.html'), fixtureHTML.trim()],
-        [path.join(process.cwd(), 'fixtures/bundle.css'), fixtureCode.trim()],
-        [path.join(process.cwd(), 'fixtures/bundle.css.map'), fixtureMap.trim()]
+        ['fixtures/build/index.html', fixtureHTML.trim()],
+        ['fixtures/build/bundle.css', fixtureCode.trim()],
+        ['fixtures/build/bundle.css.map', fixtureMap.trim()]
       ])
     })
 })
