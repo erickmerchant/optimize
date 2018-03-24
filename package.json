@@ -1,6 +1,6 @@
 {
   "name": "@erickmerchant/optimize",
-  "version": "8.0.0",
+  "version": "9.0.0",
   "description": "optimize css using uncss",
   "main": "index.js",
   "bin": {
