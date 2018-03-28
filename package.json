@@ -24,7 +24,7 @@
     "html-minifier": "^3.5.12",
     "jsdom": "^11.6.2",
     "postcss": "^6.0.21",
-    "sergeant": "^17.2.4",
+    "sergeant": "^17.2.5",
     "strip-pseudos": "^1.0.0",
     "thenify": "^3.2.1"
   },
