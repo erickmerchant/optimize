@@ -23,7 +23,7 @@
     "glob": "^7.1.2",
     "html-minifier": "^3.5.15",
     "jsdom": "^11.8.0",
-    "postcss": "^6.0.21",
+    "postcss": "^6.0.22",
     "sergeant": "^18.0.2",
     "strip-pseudos": "^1.0.0",
     "thenify": "^3.2.1"
