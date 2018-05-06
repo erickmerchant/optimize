@@ -92,7 +92,7 @@ module.exports = function (deps) {
                       to: '/' + path.relative(args.source, href),
                       map: {
                         prev,
-                        annotation: `/${path.relative(args.source, href)}.map`
+                        annotation: `${path.relative(args.source, href)}.map`
                       }
                     }))
                   })
