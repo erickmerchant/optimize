@@ -1,3 +1,13 @@
 # @erickmerchant/optimize
 
-Remove unused css.
+Currently it does the following:
+
+- Removes unused css
+- Minifies html
+
+To do:
+
+- Optimize images
+- Optimize svg usage
+- Inline css and js
+- Optimize css classes
