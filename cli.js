@@ -2,7 +2,7 @@
 
 const command = require('sergeant')
 const optimize = require('./index')
-const thenify = require('thenify')
-const writeFile = thenify(require('fs').writeFile)
+const promisify = require('util').promisify
+const writeFile = promisify(require('fs').writeFile)
 
 command('optimize', optimize({writeFile}))(process.argv.slice(2))

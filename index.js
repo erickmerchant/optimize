@@ -4,9 +4,9 @@ const postcss = require('postcss')
 const JSDOM = require('jsdom').JSDOM
 const stripPseudos = require('strip-pseudos')
 const minify = require('html-minifier').minify
-const thenify = require('thenify')
-const readFile = thenify(require('fs').readFile)
-const glob = thenify(require('glob'))
+const promisify = require('util').promisify
+const readFile = promisify(require('fs').readFile)
+const glob = promisify(require('glob'))
 
 module.exports = function (deps) {
   assert.equal(typeof deps.writeFile, 'function')
