@@ -1,6 +1,7 @@
 const assert = require('assert')
 const path = require('path')
 const postcss = require('postcss')
+const csswring = require('csswring')
 const JSDOM = require('jsdom').JSDOM
 const stripPseudos = require('strip-pseudos')
 const minify = require('html-minifier').minify
@@ -80,7 +81,8 @@ module.exports = function (deps) {
                             }
                           })
                         }
-                      })
+                      }),
+                      csswring()
                     ]
 
                     const prev = JSON.parse(map)
