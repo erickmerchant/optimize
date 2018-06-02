@@ -25,7 +25,7 @@
     "html-minifier": "^3.5.16",
     "jsdom": "^11.11.0",
     "postcss": "^6.0.22",
-    "sergeant": "^19.1.0",
+    "sergeant": "^19.1.2",
     "strip-pseudos": "^1.0.0"
   },
   "devDependencies": {
