@@ -1,10 +1,10 @@
 const assert = require('assert')
 const path = require('path')
 const postcss = require('postcss')
-const csswring = require('csswring')
+const cssnano = require('cssnano')
 const JSDOM = require('jsdom').JSDOM
 const stripPseudos = require('strip-pseudos')
-const minify = require('html-minifier').minify
+const htmlnano = require('htmlnano')
 const promisify = require('util').promisify
 const readFile = promisify(require('fs').readFile)
 const glob = promisify(require('glob'))
@@ -24,19 +24,12 @@ module.exports = function (deps) {
           return Promise.all(files.map(function (file) {
             return readFile(file, 'utf-8')
               .then(function (content) {
-                const minified = minify(content, {
-                  collapseWhitespace: true,
-                  removeComments: true,
-                  collapseBooleanAttributes: true,
-                  removeAttributeQuotes: true,
-                  removeRedundantAttributes: true,
-                  removeEmptyAttributes: true,
-                  removeOptionalTags: true
-                })
-
-                return deps.writeFile(file, minified).then(function () {
-                  return content
-                })
+                return htmlnano.process(content)
+                  .then(function (minified) {
+                    return deps.writeFile(file, minified.html).then(function () {
+                      return content
+                    })
+                  })
               })
               .then(function (content) {
                 const dom = new JSDOM(content)
@@ -82,7 +75,7 @@ module.exports = function (deps) {
                           })
                         }
                       }),
-                      csswring()
+                      cssnano({autoprefixer: false})
                     ]
 
                     const prev = JSON.parse(map)
