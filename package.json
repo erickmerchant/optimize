@@ -31,6 +31,6 @@
   "devDependencies": {
     "execa": "^0.10.0",
     "standard": "^11.0.1",
-    "tape": "^4.9.0"
+    "tape": "^4.9.1"
   }
 }
