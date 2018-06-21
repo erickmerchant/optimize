@@ -33,7 +33,11 @@ module.exports = function (deps) {
               })
               .then(function (content) {
                 const dom = new JSDOM(content)
-                const hrefs = [...dom.window.document.querySelectorAll('link[rel=stylesheet]')].map((el) => path.join(args.source, el.getAttribute('href')))
+                const hrefs = [...dom.window.document.querySelectorAll('link[rel=stylesheet]')].map((el) => {
+                  const href = el.getAttribute('href')
+
+                  return path.join(href.startsWith('/') ? args.source : path.dirname(file), href)
+                })
 
                 return Promise.resolve({
                   dom,
