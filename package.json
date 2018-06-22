@@ -24,7 +24,7 @@
     "glob": "^7.1.2",
     "htmlnano": "^0.1.9",
     "jsdom": "^11.11.0",
-    "postcss": "^6.0.22",
+    "postcss": "^6.0.23",
     "sergeant": "^20.2.0",
     "strip-pseudos": "^1.0.0"
   },
