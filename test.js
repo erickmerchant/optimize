@@ -3,34 +3,6 @@ const execa = require('execa')
 const promisify = require('util').promisify
 const readFile = promisify(require('fs').readFile)
 
-const noopDeps = {
-  writeFile () {}
-}
-const noopDefiners = {
-  parameter () {},
-  option () {}
-}
-
-test('index.js - options and parameters', function (t) {
-  t.plan(2)
-
-  const parameters = {}
-  const options = {}
-
-  require('./index')(noopDeps)({
-    parameter (name, args) {
-      parameters[name] = args
-    },
-    option (name, args) {
-      options[name] = args
-    }
-  })
-
-  t.ok(parameters.source)
-
-  t.deepEqual(parameters.source.required, true)
-})
-
 test('index.js - optimize', async function (t) {
   t.plan(1)
 
@@ -48,7 +20,7 @@ test('index.js - optimize', async function (t) {
 
       return Promise.resolve(true)
     }
-  })(noopDefiners)({ source: './fixtures/build/' })
+  })({ source: './fixtures/build/' })
     .then(function () {
       t.deepEqual(output, [
         ['fixtures/build/index.html', fixtureHTML.trim()],
