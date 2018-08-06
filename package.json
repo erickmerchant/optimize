@@ -22,7 +22,7 @@
   "dependencies": {
     "cssnano": "^4.0.5",
     "glob": "^7.1.2",
-    "htmlnano": "^0.1.9",
+    "htmlnano": "^0.1.10",
     "jsdom": "^11.12.0",
     "postcss": "^7.0.2",
     "sergeant": "^22.0.0",
