@@ -29,7 +29,7 @@
     "strip-pseudos": "^1.0.0"
   },
   "devDependencies": {
-    "execa": "^0.11.0",
+    "execa": "^1.0.0",
     "standard": "^11.0.1",
     "tape": "^4.9.1"
   }
