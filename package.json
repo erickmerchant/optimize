@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "execa": "^1.0.0",
-    "standard": "^11.0.1",
+    "standard": "^12.0.0",
     "tape": "^4.9.1"
   }
 }

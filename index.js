@@ -10,10 +10,10 @@ const readFile = promisify(require('fs').readFile)
 const glob = promisify(require('glob'))
 
 module.exports = function (deps) {
-  assert.equal(typeof deps.writeFile, 'function')
+  assert.strictEqual(typeof deps.writeFile, 'function')
 
   return function (args) {
-    return glob(path.join(args.source, '**/*.html'), {nodir: true})
+    return glob(path.join(args.source, '**/*.html'), { nodir: true })
       .then(function (files) {
         return Promise.all(files.map(function (file) {
           return readFile(file, 'utf-8')
@@ -73,7 +73,7 @@ module.exports = function (deps) {
                         })
                       }
                     }),
-                    cssnano({autoprefixer: false})
+                    cssnano({ autoprefixer: false })
                   ]
 
                   const prev = JSON.parse(map)
