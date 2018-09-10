@@ -3,7 +3,7 @@ const execa = require('execa')
 const promisify = require('util').promisify
 const readFile = promisify(require('fs').readFile)
 
-test('index.js - optimize', async function (t) {
+test('index.js - optimize', async (t) => {
   t.plan(1)
 
   const [fixtureHTML, fixtureCode, fixtureMap] = await Promise.all([
@@ -14,23 +14,22 @@ test('index.js - optimize', async function (t) {
 
   const output = []
 
-  require('./index')({
-    writeFile (file, content) {
+  await require('./index')({
+    async writeFile (file, content) {
       output.push([file, content.trim()])
 
-      return Promise.resolve(true)
+      return true
     }
   })({ source: './fixtures/build/' })
-    .then(function () {
-      t.deepEqual(output, [
-        ['fixtures/build/index.html', fixtureHTML.trim()],
-        ['fixtures/build/bundle.css', fixtureCode.trim()],
-        ['fixtures/build/bundle.css.map', fixtureMap.trim()]
-      ])
-    })
+
+  t.deepEqual(output, [
+    ['fixtures/build/index.html', fixtureHTML.trim()],
+    ['fixtures/build/bundle.css', fixtureCode.trim()],
+    ['fixtures/build/bundle.css.map', fixtureMap.trim()]
+  ])
 })
 
-test('cli.js', async function (t) {
+test('cli.js', async (t) => {
   t.plan(4)
 
   try {
