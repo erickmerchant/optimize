@@ -18,7 +18,7 @@ module.exports = (deps) => {
     files = await Promise.all(files.map(async (file) => {
       const content = await readFile(file, 'utf-8')
 
-      const minified = await htmlnano.process(content)
+      const minified = await htmlnano.process(content, { minifySvg: false })
 
       await deps.writeFile(file, minified.html)
 
