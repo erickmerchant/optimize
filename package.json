@@ -25,7 +25,8 @@
     "htmlnano": "^0.2.0",
     "jsdom": "^12.0.0",
     "postcss": "^7.0.4",
-    "sergeant": "^22.1.0",
+    "sergeant": "^22.1.1",
+    "stream-to-promise": "^2.2.0",
     "strip-pseudos": "^1.0.0"
   },
   "devDependencies": {

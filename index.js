@@ -5,9 +5,11 @@ const cssnano = require('cssnano')
 const JSDOM = require('jsdom').JSDOM
 const stripPseudos = require('strip-pseudos')
 const htmlnano = require('htmlnano')
+const streamPromise = require('stream-to-promise')
+const fs = require('fs')
 const promisify = require('util').promisify
-const readFile = promisify(require('fs').readFile)
 const glob = promisify(require('glob'))
+const createReadStream = fs.createReadStream
 
 module.exports = (deps) => {
   assert.strictEqual(typeof deps.writeFile, 'function')
@@ -16,7 +18,7 @@ module.exports = (deps) => {
     let files = await glob(path.join(args.source, '**/*.html'), { nodir: true })
 
     files = await Promise.all(files.map(async (file) => {
-      const content = await readFile(file, 'utf-8')
+      const content = await streamPromise(createReadStream(file, 'utf-8'))
 
       const minified = await htmlnano.process(content, { minifySvg: false })
 
@@ -37,8 +39,8 @@ module.exports = (deps) => {
 
     return Promise.all(files.reduce((hrefs, file) => hrefs.concat(file.hrefs.filter((href, index) => file.hrefs.indexOf(href) === index)), []).map(async (href) => {
       const [css, map] = await Promise.all([
-        readFile(href, 'utf-8'),
-        readFile(href + '.map', 'utf-8')
+        streamPromise(createReadStream(href, 'utf-8')),
+        streamPromise(createReadStream(href + '.map', 'utf-8'))
       ])
 
       const plugins = [
