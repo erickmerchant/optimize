@@ -13,8 +13,12 @@ command('optimize', ({ parameter }) => {
   })
 
   return (args) => optimize({
-    async writeFile (path, content) {
-      await streamPromise(createWriteStream(path, content))
+    writeFile (path, content) {
+      const stream = createWriteStream(path)
+
+      stream.end(content)
+
+      return streamPromise(stream)
     }
   })(args)
 })(process.argv.slice(2))
