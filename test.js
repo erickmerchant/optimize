@@ -2,6 +2,7 @@ const test = require('tape')
 const execa = require('execa')
 const promisify = require('util').promisify
 const readFile = promisify(require('fs').readFile)
+const stream = require('stream')
 
 test('index.js - optimize', async (t) => {
   t.plan(1)
@@ -15,17 +16,51 @@ test('index.js - optimize', async (t) => {
   const output = []
 
   await require('./index')({
-    async writeFile (file, content) {
-      output.push([file, content.trim()])
+    createWriteStream (file) {
+      const writable = new stream.Writable()
 
-      return true
+      writable._write = (content) => {
+        output.push([file, String(content).trim()])
+      }
+
+      return writable
     }
-  })({ source: './fixtures/build/' })
+  })({ source: './fixtures/external-map/' })
 
   t.deepEqual(output, [
-    ['fixtures/build/index.html', fixtureHTML.trim()],
-    ['fixtures/build/bundle.css', fixtureCode.trim()],
-    ['fixtures/build/bundle.css.map', fixtureMap.trim()]
+    ['fixtures/external-map/index.html', fixtureHTML.trim()],
+    ['fixtures/external-map/bundle.css', fixtureCode.trim()],
+    ['fixtures/external-map/bundle.css.map', fixtureMap.trim()]
+  ])
+})
+
+test('index.js - optimize', async (t) => {
+  t.plan(1)
+
+  const [fixtureHTML, fixtureCode, fixtureMap] = await Promise.all([
+    readFile('./fixtures/expected/index.html', 'utf-8'),
+    readFile('./fixtures/expected/bundle.css', 'utf-8'),
+    readFile('./fixtures/expected/bundle.css.map', 'utf-8')
+  ])
+
+  const output = []
+
+  await require('./index')({
+    createWriteStream (file) {
+      const writable = new stream.Writable()
+
+      writable._write = (content) => {
+        output.push([file, String(content).trim()])
+      }
+
+      return writable
+    }
+  })({ source: './fixtures/inline-map/' })
+
+  t.deepEqual(output, [
+    ['fixtures/inline-map/index.html', fixtureHTML.trim()],
+    ['fixtures/inline-map/bundle.css', fixtureCode.trim()],
+    ['fixtures/inline-map/bundle.css.map', fixtureMap.trim()]
   ])
 })
 

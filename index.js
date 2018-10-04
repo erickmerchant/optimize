@@ -12,52 +12,67 @@ const glob = promisify(require('glob'))
 const createReadStream = fs.createReadStream
 
 module.exports = (deps) => {
-  assert.strictEqual(typeof deps.writeFile, 'function')
+  assert.strictEqual(typeof deps.createWriteStream, 'function')
 
   return async (args) => {
     let files = await glob(path.join(args.source, '**/*.html'), { nodir: true })
+    const unused = []
+    const hrefs = []
 
-    files = await Promise.all(files.map(async (file) => {
+    const minifyPromises = Promise.all(files.map(async (file) => {
       const content = await streamPromise(createReadStream(file, 'utf-8'))
 
       const minified = await htmlnano.process(content, { minifySvg: false })
 
-      await deps.writeFile(file, minified.html)
+      const minifiedHTMLStream = deps.createWriteStream(file)
+
+      minifiedHTMLStream.end(minified.html)
+
+      await streamPromise(minifiedHTMLStream)
+    }))
+
+    await Promise.all(files.map(async (file) => {
+      const content = await streamPromise(createReadStream(file, 'utf-8'))
 
       const dom = new JSDOM(content)
-      const hrefs = [...dom.window.document.querySelectorAll('link[rel=stylesheet]')].map((el) => {
-        const href = el.getAttribute('href')
 
-        return path.join(href.startsWith('/') ? args.source : path.dirname(file), href)
-      })
+      for (const el of [...dom.window.document.querySelectorAll('link[rel=stylesheet]')]) {
+        let href = el.getAttribute('href')
 
-      return {
-        dom,
-        hrefs
+        href = path.join(href.startsWith('/') ? args.source : path.dirname(file), href)
+
+        if (!hrefs.includes(href)) {
+          hrefs.push(href)
+        }
+
+        const css = await streamPromise(createReadStream(href, 'utf-8'))
+
+        postcss.parse(css).walkRules((rule) => {
+          if (rule.parent.type === 'atrule' && rule.parent.name.endsWith('keyframes')) return
+
+          for (const selector of rule.selectors.map((selector) => selector.trim())) {
+            const stripped = stripPseudos(selector)
+
+            if (stripped && !dom.window.document.querySelector(stripped)) {
+              unused.push(selector)
+            }
+          }
+        })
       }
     }))
 
-    return Promise.all(files.reduce((hrefs, file) => hrefs.concat(file.hrefs.filter((href, index) => file.hrefs.indexOf(href) === index)), []).map(async (href) => {
-      const [css, map] = await Promise.all([
-        streamPromise(createReadStream(href, 'utf-8')),
-        streamPromise(createReadStream(href + '.map', 'utf-8'))
-      ])
+    return Promise.all(hrefs.map(async (href) => {
+      const css = await streamPromise(createReadStream(href, 'utf-8'))
 
       const plugins = [
-        postcss.plugin('optimize', (opts) => (root, result) => {
+        postcss.plugin('optimize', (opts) => (root) => {
           root.walkRules((rule) => {
             if (rule.parent.type === 'atrule' && rule.parent.name.endsWith('keyframes')) return
 
             const selector = rule.selectors
               .map((selector) => selector.trim())
               .filter((selector) => {
-                return files.reduce((isUsed, file) => {
-                  const stripped = stripPseudos(selector)
-
-                  if (!stripped) return true
-
-                  return file.dom.window.document.querySelector(stripped) != null ? true : isUsed
-                }, false)
+                return !unused.includes(selector)
               })
               .join(', ')
 
@@ -71,22 +86,38 @@ module.exports = (deps) => {
         cssnano({ autoprefixer: false })
       ]
 
-      const prev = JSON.parse(map)
+      const map = {
+        inline: false
+      }
 
-      prev.sources = prev.sources.map((source) => path.relative(process.cwd(), source))
+      let [, sourceMappingURL] = String(css).match(/\/\*#\s+sourceMappingURL=\s*(.*?)\s*\*\//)
+
+      if (!sourceMappingURL.startsWith('data:')) {
+        sourceMappingURL = path.join(sourceMappingURL.startsWith('/') ? args.source : path.dirname(href), sourceMappingURL)
+
+        const prev = JSON.parse(await streamPromise(createReadStream(sourceMappingURL, 'utf-8')))
+
+        map.prev = prev
+      }
 
       const output = await postcss(plugins).process(css, {
         from: '/' + path.relative(args.source, href),
         to: '/' + path.relative(args.source, href),
-        map: {
-          prev,
-          annotation: `${path.relative(args.source, href)}.map`
-        }
+        map
       })
 
+      const cssStream = deps.createWriteStream(path.join(`${href}`))
+
+      cssStream.end(String(output.css))
+
+      const mapStream = deps.createWriteStream(path.join(`${href}.map`))
+
+      mapStream.end(String(output.map))
+
       return Promise.all([
-        deps.writeFile(path.join(`${href}`), String(output.css)),
-        deps.writeFile(path.join(`${href}.map`), String(output.map))
+        minifyPromises,
+        streamPromise(cssStream),
+        streamPromise(mapStream)
       ])
     }))
   }
