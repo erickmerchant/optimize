@@ -12,6 +12,7 @@ command('optimize', ({ parameter }) => {
   })
 
   return (args) => optimize({
+    out: process.stdout,
     createWriteStream
   })(args)
 })(process.argv.slice(2))

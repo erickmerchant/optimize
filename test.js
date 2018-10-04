@@ -3,6 +3,9 @@ const execa = require('execa')
 const promisify = require('util').promisify
 const readFile = promisify(require('fs').readFile)
 const stream = require('stream')
+const out = new stream.Writable()
+
+out._write = () => {}
 
 test('index.js - optimize', async (t) => {
   t.plan(1)
@@ -16,6 +19,7 @@ test('index.js - optimize', async (t) => {
   const output = []
 
   await require('./index')({
+    out,
     createWriteStream (file) {
       const writable = new stream.Writable()
 
@@ -46,6 +50,7 @@ test('index.js - optimize', async (t) => {
   const output = []
 
   await require('./index')({
+    out,
     createWriteStream (file) {
       const writable = new stream.Writable()
 

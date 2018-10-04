@@ -1,4 +1,5 @@
 const assert = require('assert')
+const chalk = require('chalk')
 const path = require('path')
 const postcss = require('postcss')
 const cssnano = require('cssnano')
@@ -14,12 +15,16 @@ const createReadStream = fs.createReadStream
 module.exports = (deps) => {
   assert.strictEqual(typeof deps.createWriteStream, 'function')
 
+  assert.strictEqual(typeof deps.out, 'object')
+
+  assert.strictEqual(typeof deps.out.write, 'function')
+
   return async (args) => {
     let files = await glob(path.join(args.source, '**/*.html'), { nodir: true })
     const unused = []
     const hrefs = []
 
-    const minifyPromises = Promise.all(files.map(async (file) => {
+    const minifyPromises = files.map(async (file) => {
       const content = await streamPromise(createReadStream(file, 'utf-8'))
 
       const minified = await htmlnano.process(content, { minifySvg: false })
@@ -29,7 +34,9 @@ module.exports = (deps) => {
       minifiedHTMLStream.end(minified.html)
 
       await streamPromise(minifiedHTMLStream)
-    }))
+
+      deps.out.write(`${chalk.gray('[optimize]')} saved ${file}\n`)
+    })
 
     await Promise.all(files.map(async (file) => {
       const content = await streamPromise(createReadStream(file, 'utf-8'))
@@ -61,7 +68,7 @@ module.exports = (deps) => {
       }
     }))
 
-    return Promise.all(hrefs.map(async (href) => {
+    return Promise.all(minifyPromises.concat(hrefs.map(async (href) => {
       const css = await streamPromise(createReadStream(href, 'utf-8'))
 
       const plugins = [
@@ -106,19 +113,22 @@ module.exports = (deps) => {
         map
       })
 
-      const cssStream = deps.createWriteStream(path.join(`${href}`))
+      const cssStream = deps.createWriteStream(href)
 
       cssStream.end(String(output.css))
 
-      const mapStream = deps.createWriteStream(path.join(`${href}.map`))
+      const mapStream = deps.createWriteStream(href + '.map')
 
       mapStream.end(String(output.map))
 
       return Promise.all([
-        minifyPromises,
-        streamPromise(cssStream),
-        streamPromise(mapStream)
+        streamPromise(cssStream).then(() => {
+          deps.out.write(`${chalk.gray('[optimize]')} saved ${href}\n`)
+        }),
+        streamPromise(mapStream).then(() => {
+          deps.out.write(`${chalk.gray('[optimize]')} saved ${href + '.map'}\n`)
+        })
       ])
-    }))
+    })))
   }
 }
