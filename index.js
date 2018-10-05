@@ -21,7 +21,7 @@ module.exports = (deps) => {
 
   return async (args) => {
     let files = await glob(path.join(args.source, '**/*.html'), { nodir: true })
-    const unused = []
+    const used = []
     const hrefs = []
 
     const minifyPromises = files.map(async (file) => {
@@ -41,7 +41,7 @@ module.exports = (deps) => {
     await Promise.all(files.map(async (file) => {
       const content = await streamPromise(createReadStream(file, 'utf-8'))
 
-      const dom = new JSDOM(content)
+      const dom = new JSDOM(String(content))
 
       for (const el of [...dom.window.document.querySelectorAll('link[rel=stylesheet]')]) {
         let href = el.getAttribute('href')
@@ -60,8 +60,8 @@ module.exports = (deps) => {
           for (const selector of rule.selectors.map((selector) => selector.trim())) {
             const stripped = stripPseudos(selector)
 
-            if (stripped && !dom.window.document.querySelector(stripped)) {
-              unused.push(selector)
+            if (!stripped || dom.window.document.querySelector(stripped) != null) {
+              used.push(selector)
             }
           }
         })
@@ -79,7 +79,7 @@ module.exports = (deps) => {
             const selector = rule.selectors
               .map((selector) => selector.trim())
               .filter((selector) => {
-                return !unused.includes(selector)
+                return used.includes(selector)
               })
               .join(', ')
 
