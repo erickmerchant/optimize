@@ -1,134 +1,147 @@
-const assert = require('assert')
 const chalk = require('chalk')
 const path = require('path')
 const postcss = require('postcss')
-const cssnano = require('cssnano')
-const JSDOM = require('jsdom').JSDOM
 const stripPseudos = require('strip-pseudos')
-const htmlnano = require('htmlnano')
+const cssnano = require('cssnano')
 const streamPromise = require('stream-to-promise')
 const fs = require('fs')
 const promisify = require('util').promisify
 const glob = promisify(require('glob'))
 const createReadStream = fs.createReadStream
+const createWriteStream = fs.createWriteStream
+const { Worker } = require('worker_threads')
 
-module.exports = (deps) => {
-  assert.strictEqual(typeof deps.createWriteStream, 'function')
+module.exports = async (args) => {
+  const workers = []
+  const selectors = []
+  const asts = {}
+  const prevMaps = {}
+  let used = []
 
-  assert.strictEqual(typeof deps.out, 'object')
+  const cssFiles = await glob(path.join(args.source, '**/*.css'), { nodir: true })
 
-  assert.strictEqual(typeof deps.out.write, 'function')
+  for (const file of cssFiles) {
+    const css = await streamPromise(createReadStream(file, 'utf-8'))
 
-  return async (args) => {
-    let files = await glob(path.join(args.source, '**/*.html'), { nodir: true })
-    const used = []
-    const hrefs = []
+    let [, sourceMappingURL] = String(css).match(/\/\*#\s+sourceMappingURL=\s*(.*?)\s*\*\//)
 
-    const minifyPromises = files.map(async (file) => {
-      const content = await streamPromise(createReadStream(file, 'utf-8'))
+    if (!sourceMappingURL.startsWith('data:')) {
+      sourceMappingURL = path.join(sourceMappingURL.startsWith('/') ? args.source : path.dirname(file), sourceMappingURL)
 
-      const minified = await htmlnano.process(content, { minifySvg: false })
+      const prev = JSON.parse(await streamPromise(createReadStream(sourceMappingURL, 'utf-8')))
 
-      const minifiedHTMLStream = deps.createWriteStream(file)
+      prevMaps[file] = prev
+    }
 
-      minifiedHTMLStream.end(minified.html)
+    asts[file] = postcss.parse(css)
 
-      await streamPromise(minifiedHTMLStream)
+    asts[file].walkRules((rule) => {
+      if (rule.parent.type === 'atrule' && rule.parent.name.endsWith('keyframes')) return
 
-      deps.out.write(`${chalk.gray('[optimize]')} saved ${file}\n`)
-    })
+      for (let selector of rule.selectors.map((selector) => selector.trim())) {
+        selector = stripPseudos(selector)
 
-    await Promise.all(files.map(async (file) => {
-      const content = await streamPromise(createReadStream(file, 'utf-8'))
-
-      const dom = new JSDOM(String(content))
-
-      for (const el of [...dom.window.document.querySelectorAll('link[rel=stylesheet]')]) {
-        let href = el.getAttribute('href')
-
-        href = path.join(href.startsWith('/') ? args.source : path.dirname(file), href)
-
-        if (!hrefs.includes(href)) {
-          hrefs.push(href)
+        if (selector) {
+          selectors.push(selector)
         }
-
-        const css = await streamPromise(createReadStream(href, 'utf-8'))
-
-        postcss.parse(css).walkRules((rule) => {
-          if (rule.parent.type === 'atrule' && rule.parent.name.endsWith('keyframes')) return
-
-          for (const selector of rule.selectors.map((selector) => selector.trim())) {
-            const stripped = stripPseudos(selector)
-
-            if (!stripped || dom.window.document.querySelector(stripped) != null) {
-              used.push(selector)
-            }
-          }
-        })
       }
-    }))
+    })
+  }
 
-    return Promise.all(minifyPromises.concat(hrefs.map(async (href) => {
-      const css = await streamPromise(createReadStream(href, 'utf-8'))
+  const htmlFiles = await glob(path.join(args.source, '**/*.html'), { nodir: true })
 
-      const plugins = [
-        postcss.plugin('optimize', (opts) => (root) => {
-          root.walkRules((rule) => {
-            if (rule.parent.type === 'atrule' && rule.parent.name.endsWith('keyframes')) return
+  let awaiting = htmlFiles.length
 
-            const selector = rule.selectors
-              .map((selector) => selector.trim())
-              .filter((selector) => {
-                return used.includes(selector)
-              })
-              .join(', ')
-
-            if (selector === '') {
-              rule.remove()
-            } else {
-              rule.selector = selector
-            }
-          })
-        }),
-        cssnano({ autoprefixer: false })
-      ]
-
-      const map = {
-        inline: false
-      }
-
-      let [, sourceMappingURL] = String(css).match(/\/\*#\s+sourceMappingURL=\s*(.*?)\s*\*\//)
-
-      if (!sourceMappingURL.startsWith('data:')) {
-        sourceMappingURL = path.join(sourceMappingURL.startsWith('/') ? args.source : path.dirname(href), sourceMappingURL)
-
-        const prev = JSON.parse(await streamPromise(createReadStream(sourceMappingURL, 'utf-8')))
-
-        map.prev = prev
-      }
-
-      const output = await postcss(plugins).process(css, {
-        from: '/' + path.relative(args.source, href),
-        to: '/' + path.relative(args.source, href),
-        map
+  await new Promise((resolve, reject) => {
+    while (workers.length < args.workers) {
+      const worker = new Worker(path.join(__dirname, 'src/workers/html.js'), {
+        workerData: args
       })
 
-      const cssStream = deps.createWriteStream(href)
+      workers.push(worker)
 
-      cssStream.end(String(output.css))
+      worker.on('message', (data) => {
+        console.log(`${chalk.gray('[optimize]')} saved ${data.file}`)
 
-      const mapStream = deps.createWriteStream(href + '.map')
+        used = used.concat(data.used)
 
-      mapStream.end(String(output.map))
+        if (!--awaiting) {
+          resolve()
 
-      return Promise.all([
-        streamPromise(cssStream).then(() => {
-          deps.out.write(`${chalk.gray('[optimize]')} saved ${href}\n`)
-        }),
-        streamPromise(mapStream).then(() => {
-          deps.out.write(`${chalk.gray('[optimize]')} saved ${href + '.map'}\n`)
-        })
-      ])
-    })))
-  }
+          for (let worker of workers) {
+            worker.terminate()
+          }
+        }
+      })
+      worker.on('error', reject)
+      worker.on('exit', (code) => {
+        if (code !== 0) {
+          reject(new Error(`Worker stopped with exit code ${code}`))
+        }
+      })
+    }
+
+    htmlFiles.forEach((file, i) => {
+      const worker = workers[i % workers.length]
+
+      worker.postMessage({ file, selectors })
+    })
+  })
+
+  const plugins = [
+    postcss.plugin('optimize', (opts) => (root) => {
+      root.walkRules((rule) => {
+        if (rule.parent.type === 'atrule' && rule.parent.name.endsWith('keyframes')) return
+
+        const selector = rule.selectors
+          .map((selector) => selector.trim())
+          .filter((selector) => {
+            selector = stripPseudos(selector)
+
+            return !selector || used.includes(selector)
+          })
+          .join(', ')
+
+        if (selector === '') {
+          rule.remove()
+        } else {
+          rule.selector = selector
+        }
+      })
+    }),
+    cssnano({ autoprefixer: false })
+  ]
+
+  return Promise.all(cssFiles.map(async (file) => {
+    const map = {
+      inline: false
+    }
+
+    if (prevMaps[file]) {
+      map.prev = prevMaps[file]
+    }
+
+    const output = await postcss(plugins).process(asts[file], {
+      from: '/' + path.relative(args.source, file),
+      to: '/' + path.relative(args.source, file),
+      map
+    })
+
+    const cssStream = createWriteStream(file)
+
+    cssStream.end(String(output.css))
+
+    const mapStream = createWriteStream(file + '.map')
+
+    mapStream.end(String(output.map))
+
+    return Promise.all([
+      streamPromise(cssStream).then(() => {
+        console.log(`${chalk.gray('[optimize]')} saved ${file}`)
+      }),
+      streamPromise(mapStream).then(() => {
+        console.log(`${chalk.gray('[optimize]')} saved ${file + '.map'}`)
+      })
+    ])
+  }))
 }

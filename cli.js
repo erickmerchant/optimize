@@ -2,17 +2,20 @@
 
 const command = require('sergeant')
 const optimize = require('./index')
-const fs = require('fs')
-const createWriteStream = fs.createWriteStream
+const os = require('os')
 
-command('optimize', ({ parameter }) => {
+command('optimize', ({ parameter, option }) => {
   parameter('source', {
     description: 'the directory that contains html',
     required: true
   })
 
-  return (args) => optimize({
-    out: process.stdout,
-    createWriteStream
-  })(args)
+  option('workers', {
+    description: 'how many workers to use',
+    type (val = os.cpus().length) {
+      return Number(val)
+    }
+  })
+
+  return optimize
 })(process.argv.slice(2))
