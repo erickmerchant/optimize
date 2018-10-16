@@ -60,10 +60,10 @@ module.exports = async (args) => {
 
       workers.push(worker)
 
-      worker.on('message', (data) => {
-        console.log(`${chalk.gray('[optimize]')} saved ${data.file}`)
+      worker.on('message', ({ file, used }) => {
+        console.log(`${chalk.gray('[optimize]')} saved ${file}`)
 
-        used = used.concat(data.used)
+        used = used.concat(used)
 
         if (!--awaiting) {
           resolve()
