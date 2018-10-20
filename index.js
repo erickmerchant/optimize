@@ -20,7 +20,7 @@ module.exports = (deps) => {
   assert.strictEqual(typeof deps.out.write, 'function')
 
   return async (args) => {
-    let files = await glob(path.join(args.source, '**/*.html'), { nodir: true })
+    const files = await glob(path.join(args.source, '**/*.html'), { nodir: true })
     const used = []
     const hrefs = []
 
